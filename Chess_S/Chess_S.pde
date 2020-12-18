@@ -1,5 +1,6 @@
 //server
 import processing.net.*;
+import java.util.LinkedList;
 
 Server server;
 
@@ -7,14 +8,17 @@ color lBrown = #FFFFC3;
 color dBrown  = #D8864E;
 PImage wRook, wBishop, wKnight, wQueen, wKing, wPawn;
 PImage bRook, bBishop, bKnight, bQueen, bKing, bPawn;
-boolean firstClick = true;
+
 int iRow, iCol, fRow, fCol;
-
-ArrayList<Piece> pieces = new ArrayList();
-
 int boardPosA = 5;
 int boardCellSize = 100;
 int boardPosB = boardPosA + boardCellSize * 8;
+
+boolean firstClick = true;
+boolean yourTurn = true;
+
+ArrayList<Piece> pieces = new ArrayList();
+LinkedList<Piece[][]> gameStates = new LinkedList();
 
 Piece[][] board = new Piece[8][8];
 
@@ -27,13 +31,15 @@ void setup()
 
   loadImages();
   setupBoard();
+  
+  gameStates.addLast(board);
 }
 
 void draw()
 {
   drawBoard();
   drawPieces();
-  
+  println(pieces.size());
   listen();
 }
 
@@ -108,22 +114,57 @@ void setupBoard()
   }
 }
 
+void undo()
+{
+  board = gameStates.getLast();
+  gameStates.removeLast();
+  
+  updatePieces();
+  
+  yourTurn = !yourTurn;
+}
+
+void updatePieces()
+{
+  ArrayList<Piece> nPieces = new ArrayList();
+  
+  for(int r = 0; r < 8; r++)
+  {
+    for(int c = 0; c < 8; c++)
+      if(board[r][c].getTeam() != -1) nPieces.add(board[r][c]);
+  }
+  
+  pieces = nPieces;
+}
+
 void listen()
 {
-  //Client client = server.available();
+  Client client = server.available();
   
-  //if(client != null)
-  //{
-  //  String incoming = client.readString();
+  if(client != null)
+  {
+    String incoming = client.readString();
     
-  //  int iR = int(incoming.substring(0, 1));
-  //  int iC = int(incoming.substring(2, 3));
-  //  int fR = int(incoming.substring(4, 5));
-  //  int fC = int(incoming.substring(6, 7));
-    
-  //  board[fR][fC] = board[iR][iC];
-  //  board[iR][iC] = ' ';
-  //}
+    if(incoming.length() == 1)
+    {
+      switch(incoming)
+      {
+        case "u":
+          undo();
+          break;
+      }
+    }
+    else
+    {
+      int iR = int(incoming.substring(0, 1));
+      int iC = int(incoming.substring(2, 3));
+      int fR = int(incoming.substring(4, 5));
+      int fC = int(incoming.substring(6, 7));
+      
+      movePiece(iR, iC, fR, fC);
+      yourTurn = true;
+    }
+  }
 }
 
 void firstClick()
@@ -156,14 +197,12 @@ void secondClick()
   }
   else if(board[iRow][iCol].getMoveTiles().contains(board[fRow][fCol]))
   {
-    board[fRow][fCol] = board[iRow][iCol];
-    board[iRow][iCol] = new Piece(new PVector(iCol, iRow));
-    board[fRow][fCol].move(fCol, fRow);
-    board[fRow][fCol].setSelected(false);
+    movePiece(iRow, iCol, fRow, fCol);
     
     server.write(iRow + "," + iCol + "," + fRow + "," + fCol);
     
     firstClick = true;
+    yourTurn = false;
   }
   else
   {
@@ -172,14 +211,36 @@ void secondClick()
   }
 }
 
+void movePiece(int iRow, int iCol, int fRow, int fCol)
+{
+  board[fRow][fCol] = board[iRow][iCol];
+  board[iRow][iCol] = new Piece(new PVector(iCol, iRow));
+  board[fRow][fCol].move(fCol, fRow);
+  board[fRow][fCol].setSelected(false);
+  
+  gameStates.addLast(board);
+}
+
 void mouseReleased()
 {
   //move pieces
   if(mouseX > boardPosA && mouseX < boardPosB && mouseY > boardPosA && mouseY < boardPosB)
   {
-    if(firstClick)
-      firstClick();
-    else
-      secondClick();
+    if(yourTurn)
+    {
+      if(firstClick)
+        firstClick();
+      else
+        secondClick();
+    }
   }
+}
+
+void keyReleased()
+{
+  //if(key == 'z' && gameStates.size() > 0)
+  //{
+  //  undo();
+  //  server.write('u');
+  //}
 }
