@@ -25,10 +25,10 @@ class King extends Piece
     setMoveTiles(tiles);
   }
   
-  void highlight()
-  {
-    noStroke();
-    fill(0, 50);
-    square(getPos().x, getPos().y, boardCellSize);
-  }
+  //void highlight()
+  //{
+  //  noStroke();
+  //  fill(0, 50);
+  //  square(getPos().x, getPos().y, boardCellSize);
+  //}
 }

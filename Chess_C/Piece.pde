@@ -17,9 +17,18 @@ class Piece
     setTeam(team);
     setImage(image);
   }
+  public Piece(Piece copy)
+  {
+    setTeam(copy.getTeam());
+    setBoardPos(copy.getBoardPos());
+    setImage(copy.getImage());
+    selected = false;
+  }
   
   void show()
   {
+    imageMode(CORNER);
+    
     if(selected && !firstClick)
     {
       highlight();
@@ -40,9 +49,20 @@ class Piece
   
   void highlight()
   {
-    noStroke();
-    fill(0, 50);
-    circle(getPos().x + boardCellSize / 2, getPos().y + boardCellSize / 2, boardCellSize / 2.5);
+    rectMode(CORNER);
+    
+    if(getTeam() == -1)
+    {
+      noStroke();
+      fill(0, 50);
+      circle(getPos().x + boardCellSize / 2, getPos().y + boardCellSize / 2, boardCellSize / 2.5);
+    }
+    else
+    {
+      noStroke();
+      fill(0, 50);
+      square(getPos().x, getPos().y, boardCellSize);
+    }
   }
   
   //getters & setters

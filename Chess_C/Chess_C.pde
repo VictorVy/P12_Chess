@@ -8,6 +8,7 @@ color lBrown = #FFFFC3;
 color dBrown  = #D8864E;
 PImage wRook, wBishop, wKnight, wQueen, wKing, wPawn;
 PImage bRook, bBishop, bKnight, bQueen, bKing, bPawn;
+PImage screenCap;
 
 int iRow, iCol, fRow, fCol;
 int boardPosA = 5;
@@ -16,9 +17,10 @@ int boardPosB = boardPosA + boardCellSize * 8;
 
 boolean firstClick = true;
 boolean yourTurn = false;
+boolean promoting = false;
 
 ArrayList<Piece> pieces = new ArrayList();
-LinkedList<Piece[][]> gameStates = new LinkedList();
+LinkedList<Move> moveLog = new LinkedList();
 
 Piece[][] board = new Piece[8][8];
 
@@ -26,19 +28,22 @@ void setup()
 {
   size(810, 810);
   background(0);
+  textAlign(CENTER, CENTER);
 
   client = new Client(this, "127.0.0.1", 1234);
+  
+  iRow = iCol = fRow = fCol = -1;
 
   loadImages();
   setupBoard();
-  
-  gameStates.addLast(board);
 }
 
 void draw()
 {
   drawBoard();
   drawPieces();
+  
+  if(promoting) promote();
   
   listen();
 }
@@ -58,30 +63,6 @@ void loadImages()
   wQueen = loadImage("whiteQueen.png");
   wKing = loadImage("whiteKing.png");
   wPawn = loadImage("whitePawn.png");
-}
-
-void drawBoard()
-{
-  for (int r = 0; r < 8; r++)
-  {
-    for (int c = 0; c < 8; c++)
-    {
-      noStroke();
-      
-      if (r % 2 == c % 2) 
-        fill(lBrown);
-      else
-        fill(dBrown);
-      
-      rect(boardPosA + c * boardCellSize, boardPosA + r * boardCellSize, boardCellSize, boardCellSize);
-    }
-  }
-}
-
-void drawPieces()
-{
-  for(Piece piece : pieces)
-    piece.show();
 }
 
 void setupBoard()
@@ -114,27 +95,109 @@ void setupBoard()
   }
 }
 
+void drawBoard()
+{
+  rectMode(CORNER);
+  
+  for (int r = 0; r < 8; r++)
+  {
+    for (int c = 0; c < 8; c++)
+    {
+      noStroke();
+      
+      if (r % 2 == c % 2) 
+        fill(lBrown);
+      else
+        fill(dBrown);
+      
+      rect(boardPosA + c * boardCellSize, boardPosA + r * boardCellSize, boardCellSize, boardCellSize);
+    }
+  }
+}
+
+void drawPieces()
+{
+  for(Piece piece : pieces)
+    piece.show();
+}
+
 void undo()
 {
-  board = gameStates.getLast();
-  gameStates.removeLast();
+  Piece taking = moveLog.getLast().getTaking();
+  Piece taken = moveLog.getLast().getTaken();
+  moveLog.removeLast();
   
-  updatePieces();
-  
+  movePiece((int)taken.getBoardPos().y, (int)taken.getBoardPos().x, (int)taking.getBoardPos().y, (int)taking.getBoardPos().x);
+  board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x] = taken;
+  if(taken.getTeam() != -1) pieces.add(taken);
   yourTurn = !yourTurn;
 }
 
-void updatePieces()
+void promote()
 {
-  ArrayList<Piece> nPieces = new ArrayList();
+  //background
+  rectMode(CORNER);
+  imageMode(CORNER);
+  image(screenCap, 0, 0);
+  noStroke();
+  fill(0, 128);
+  rect(0, 0, width, height);
   
-  for(int r = 0; r < 8; r++)
+  //ui
+  fill(255);
+  textSize(128);
+  text("PROMOTE", width / 2, height / 4);
+  
+  choiceBox(bRook, "R", width / 5, height / 1.75);
+  choiceBox(bKnight, "K", width / 5 * 2, height / 1.75);
+  choiceBox(bBishop, "B", width / 5 * 3, height / 1.75);
+  choiceBox(bQueen, "Q", width / 5 * 4, height / 1.75);
+}
+
+void endPromote(char type)
+{
+  pieces.remove(board[fRow][fCol]);
+  
+  switch(type)
   {
-    for(int c = 0; c < 8; c++)
-      if(board[r][c].getTeam() != -1) nPieces.add(board[r][c]);
+    case 'r':
+      moveLog.getLast().setPromoPiece(new Rook(new PVector(fCol, fRow), 1, bRook));
+      break;
+    case 'k':
+      moveLog.getLast().setPromoPiece(new Knight(new PVector(fCol, fRow), 1, bKnight));
+      break;
+    case 'b':
+      moveLog.getLast().setPromoPiece(new Bishop(new PVector(fCol, fRow), 1, bBishop));
+      break;
+    case 'q':
+      moveLog.getLast().setPromoPiece(new Queen(new PVector(fCol, fRow), 1, bQueen));
+      break;
   }
   
-  pieces = nPieces;
+  board[fRow][fCol] = moveLog.getLast().getPromoPiece();
+  pieces.add(moveLog.getLast().getPromoPiece());
+  
+  promoting = false;
+  firstClick = true;
+  yourTurn = false;
+}
+
+void choiceBox(PImage image, String text, float x, float y)
+{
+  rectMode(CENTER);
+  imageMode(CENTER);
+  
+  stroke(0);
+  strokeWeight(4);
+  fill(lBrown);
+  
+  rect(x, y, boardCellSize * 1.25, boardCellSize * 1.25);
+  image(image, x, y, boardCellSize, boardCellSize);
+  
+  fill(255);
+  textSize(64);
+  
+  text(text, x, y + boardCellSize);
 }
 
 void listen()
@@ -159,6 +222,8 @@ void listen()
       int fR = int(incoming.substring(4, 5));
       int fC = int(incoming.substring(6, 7));
       
+      if(pieces.contains(board[fR][fC])) pieces.remove(board[fR][fC]);
+      moveLog.addLast(new Move(new Piece(board[iR][iC]), new Piece(board[fR][fC])));
       movePiece(iR, iC, fR, fC);
       yourTurn = true;
     }
@@ -195,12 +260,28 @@ void secondClick()
   }
   else if(board[iRow][iCol].getMoveTiles().contains(board[fRow][fCol]))
   {
-    movePiece(iRow, iCol, fRow, fCol);
-    
-    client.write(iRow + "," + iCol + "," + fRow + "," + fCol);
-    
-    firstClick = true;
-    yourTurn = false;
+    if(!(fRow == 7 && board[iRow][iCol] instanceof Pawn))
+    {
+      if(pieces.contains(board[fRow][fCol])) pieces.remove(board[fRow][fCol]);
+      board[iRow][iCol].setSelected(false);
+      moveLog.addLast(new Move(new Piece(board[iRow][iCol]), new Piece(board[fRow][fCol])));
+      movePiece(iRow, iCol, fRow, fCol);
+      
+      client.write(iRow + "," + iCol + "," + fRow + "," + fCol);
+      
+      firstClick = true;
+      yourTurn = false;
+    }
+    else
+    {
+      if(pieces.contains(board[fRow][fCol])) pieces.remove(board[fRow][fCol]);
+      board[iRow][iCol].setSelected(false);
+      moveLog.addLast(new Move(new Piece(board[iRow][iCol]), new Piece(board[fRow][fCol]), true));
+      movePiece(iRow, iCol, fRow, fCol);
+      
+      promoting = true;
+      screenCap = get();
+    }
   }
   else
   {
@@ -214,31 +295,4 @@ void movePiece(int iRow, int iCol, int fRow, int fCol)
   board[fRow][fCol] = board[iRow][iCol];
   board[iRow][iCol] = new Piece(new PVector(iCol, iRow));
   board[fRow][fCol].move(fCol, fRow);
-  board[fRow][fCol].setSelected(false);
-  
-  gameStates.addLast(board);
-}
-
-void mouseReleased()
-{
-  //move pieces
-  if(mouseX > boardPosA && mouseX < boardPosB && mouseY > boardPosA && mouseY < boardPosB)
-  {
-    if(yourTurn)
-    {
-      if(firstClick)
-        firstClick();
-      else
-        secondClick();
-    }
-  }
-}
-
-void keyPressed()
-{
-  if(key == 'z')
-  {
-    undo();
-    client.write('u');
-  }
 }
