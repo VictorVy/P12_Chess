@@ -17,13 +17,6 @@ class Piece
     setTeam(team);
     setImage(image);
   }
-  public Piece(Piece copy)
-  {
-    setTeam(copy.getTeam());
-    setBoardPos(copy.getBoardPos());
-    setImage(copy.getImage());
-    selected = false;
-  }
   
   void show()
   {
@@ -85,4 +78,6 @@ class Piece
   
   void setMoveTiles(ArrayList<Piece> moveTiles) { this.moveTiles = moveTiles; }
   ArrayList<Piece> getMoveTiles() { return moveTiles; }
+  
+  Piece getCopy() { return new Piece(getBoardPos()); }
 }

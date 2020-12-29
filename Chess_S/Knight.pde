@@ -26,4 +26,6 @@ class Knight extends Piece
     
     setMoveTiles(tiles);
   }
+  
+  Piece getCopy() { return new Knight(getBoardPos(), getTeam(), getImage()); }
 }

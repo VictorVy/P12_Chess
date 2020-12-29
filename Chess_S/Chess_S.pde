@@ -125,12 +125,21 @@ void undo()
 {
   Piece taking = moveLog.getLast().getTaking();
   Piece taken = moveLog.getLast().getTaken();
-  moveLog.removeLast();
+  
+  if(moveLog.getLast().getPromoMove())
+  {
+    int team = board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x].getTeam();
+    pieces.remove(board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x]);
+    board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x] = new Pawn(new PVector(taken.getBoardPos().x, taken.getBoardPos().y), team, team == 0 ? wPawn : bPawn);
+    pieces.add(board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x]);
+  }
   
   movePiece((int)taken.getBoardPos().y, (int)taken.getBoardPos().x, (int)taking.getBoardPos().y, (int)taking.getBoardPos().x);
-  board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x] = taken;
+  if(!moveLog.getLast().getPromoMove()) board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x] = taken;
   if(taken.getTeam() != -1) pieces.add(taken);
   yourTurn = !yourTurn;
+  
+  moveLog.removeLast();
 }
 
 void promote()
@@ -177,6 +186,8 @@ void endPromote(char type)
   board[fRow][fCol] = moveLog.getLast().getPromoPiece();
   pieces.add(moveLog.getLast().getPromoPiece());
   
+  server.write(iRow + "," + iCol + "," + fRow + "," + fCol + "," + type + ",promotion");
+  
   promoting = false;
   firstClick = true;
   yourTurn = false;
@@ -208,15 +219,8 @@ void listen()
   {
     String incoming = client.readString();
     
-    if(incoming.length() == 1)
-    {
-      switch(incoming)
-      {
-        case "u":
-          undo();
-          break;
-      }
-    }
+    if(incoming.contains("undo"))
+      undo();
     else
     {
       int iR = int(incoming.substring(0, 1));
@@ -225,8 +229,28 @@ void listen()
       int fC = int(incoming.substring(6, 7));
       
       if(pieces.contains(board[fR][fC])) pieces.remove(board[fR][fC]);
-      moveLog.addLast(new Move(new Piece(board[iR][iC]), new Piece(board[fR][fC])));
-      movePiece(iR, iC, fR, fC);
+      
+      if(incoming.contains("promotion"))
+      {
+        char type = incoming.charAt(8);
+        
+        moveLog.addLast(new Move(board[iR][iC].getCopy(), board[fR][fC].getCopy(), true));
+        
+        board[fR][fC] = type == 'r' ? new Rook(new PVector(fC, fR), 1, bRook):
+                        type == 'k' ? new Knight(new PVector(fC, fR), 1, bKnight):
+                        type == 'b' ? new Bishop(new PVector(fC, fR), 1, bBishop):
+                                      new Queen(new PVector(fC, fR), 1, bQueen);
+        
+        pieces.add(board[fR][fC]);
+        pieces.remove(board[iR][iC]);
+        board[iR][iC] = new Piece(new PVector(iC, iR));
+      }
+      else
+      {
+        moveLog.addLast(new Move(board[iR][iC].getCopy(), board[fR][fC].getCopy()));
+        movePiece(iR, iC, fR, fC);
+      }
+      
       yourTurn = true;
     }
   }
@@ -266,7 +290,7 @@ void secondClick()
     {
       if(pieces.contains(board[fRow][fCol])) pieces.remove(board[fRow][fCol]);
       board[iRow][iCol].setSelected(false);
-      moveLog.addLast(new Move(new Piece(board[iRow][iCol]), new Piece(board[fRow][fCol])));
+      moveLog.addLast(new Move(board[iRow][iCol].getCopy(), board[fRow][fCol].getCopy()));
       movePiece(iRow, iCol, fRow, fCol);
       
       server.write(iRow + "," + iCol + "," + fRow + "," + fCol);
@@ -278,7 +302,7 @@ void secondClick()
     {
       if(pieces.contains(board[fRow][fCol])) pieces.remove(board[fRow][fCol]);
       board[iRow][iCol].setSelected(false);
-      moveLog.addLast(new Move(new Piece(board[iRow][iCol]), new Piece(board[fRow][fCol]), true));
+      moveLog.addLast(new Move(board[iRow][iCol].getCopy(), board[fRow][fCol].getCopy(), true));
       movePiece(iRow, iCol, fRow, fCol);
       
       promoting = true;

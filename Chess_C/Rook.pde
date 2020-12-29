@@ -44,10 +44,5 @@ class Rook extends Piece
     setMoveTiles(tiles);
   }
   
-  //void highlight()
-  //{
-  //  noStroke();
-  //  fill(0, 50);
-  //  square(getPos().x, getPos().y, boardCellSize);
-  //}
+  Piece getCopy() { return new Rook(getBoardPos(), getTeam(), getImage()); }
 }

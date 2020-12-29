@@ -124,4 +124,6 @@ class Queen extends Piece
     
     setMoveTiles(tiles);
   }
+  
+  Piece getCopy() { return new Queen(getBoardPos(), getTeam(), getImage()); }
 }

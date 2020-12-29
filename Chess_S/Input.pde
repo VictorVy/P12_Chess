@@ -29,7 +29,7 @@ void keyReleased()
     if(key == 'z' && moveLog.size() > 0)
     {
       undo();
-      server.write('u');
+      server.write("undo");
     }
   }
 }

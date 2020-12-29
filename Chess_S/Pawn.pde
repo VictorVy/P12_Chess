@@ -39,4 +39,6 @@ class Pawn extends Piece
     
     setMoveTiles(tiles);
   }
+  
+  Piece getCopy() { return new Pawn(getBoardPos(), getTeam(), getImage()); }
 }

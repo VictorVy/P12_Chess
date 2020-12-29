@@ -125,10 +125,5 @@ class Queen extends Piece
     setMoveTiles(tiles);
   }
   
-  //void highlight()
-  //{
-  //  noStroke();
-  //  fill(0, 50);
-  //  square(getPos().x, getPos().y, boardCellSize);
-  //}
+  Piece getCopy() { return new Piece(getBoardPos(), getTeam(), getImage()); }
 }

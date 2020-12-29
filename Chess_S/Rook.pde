@@ -43,4 +43,6 @@ class Rook extends Piece
     
     setMoveTiles(tiles);
   }
+  
+  Piece getCopy() { return new Rook(getBoardPos(), getTeam(), getImage()); }
 }

@@ -24,4 +24,6 @@ class King extends Piece
     
     setMoveTiles(tiles);
   }
+  
+  Piece getCopy() { return new King(getBoardPos(), getTeam(), getImage()); }
 }

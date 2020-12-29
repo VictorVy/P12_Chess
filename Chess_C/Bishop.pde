@@ -79,4 +79,6 @@ class Bishop extends Piece
     
     setMoveTiles(tiles);
   }
+  
+  Piece getCopy() { return new Bishop(getBoardPos(), getTeam(), getImage()); }
 }

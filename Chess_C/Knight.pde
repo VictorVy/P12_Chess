@@ -27,10 +27,5 @@ class Knight extends Piece
     setMoveTiles(tiles);
   }
   
-  //void highlight()
-  //{
-  //  noStroke();
-  //  fill(0, 50);
-  //  square(getPos().x, getPos().y, boardCellSize);
-  //}
+  Piece getCopy() { return new Knight(getBoardPos(), getTeam(), getImage()); }
 }
