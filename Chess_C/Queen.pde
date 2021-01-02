@@ -5,7 +5,7 @@ class Queen extends Piece
     super(boardPos, team, image);
   }
   
-  void getTiles()
+  void getTiles() //determines reachable tiles
   {
     ArrayList<Piece> tiles = new ArrayList();
     
@@ -15,6 +15,7 @@ class Queen extends Piece
     boolean t, r, l, b, tr, tl, br, bl;
     t = r = l = b = tr = tl = br = bl = true;
     
+    //breadth-first "raycasting outwards (all directions)
     for(int i = 1; t || r || l || b || tr || tl || br || bl; i++)
     {
       if(t && iY - i < 0) t = false;

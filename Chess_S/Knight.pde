@@ -5,13 +5,14 @@ class Knight extends Piece
     super(boardPos, team, image);
   }
   
-  void getTiles()
+  void getTiles() //determines reachable tiles
   {
     ArrayList<Piece> tiles = new ArrayList();
     
     int iX = (int)getBoardPos().x;
     int iY = (int)getBoardPos().y;
     
+    //scans 5*5 grid around itself, with some optimisations
     for(int r = -2; r < 3; r++)
     {
       if(iY + r >= 8 || iY + r < 0 || r == 0) continue;

@@ -1,6 +1,5 @@
 void mouseReleased()
 {
-  //move pieces
   if(!promoting && mouseX > boardPosA && mouseX < boardPosB && mouseY > boardPosA && mouseY < boardPosB)
   {
     if(yourTurn)
@@ -15,7 +14,7 @@ void mouseReleased()
 
 void keyReleased()
 {
-  if(promoting)
+  if(promoting) //promote pawn
   {
     switch(key)
     {
@@ -24,12 +23,9 @@ void keyReleased()
         break;
     }
   }
-  else
+  else if(key == 'z' && moveLog.size() > 0) //undo
   {
-    if(key == 'z' && moveLog.size() > 0)
-    {
-      undo();
-      client.write("undo");
-    }
+    undo();
+    client.write("undo");
   }
 }

@@ -5,14 +5,15 @@ class Pawn extends Piece
     super(boardPos, team, image);
   }
   
-  void getTiles()
+  void getTiles() //determines reachable tiles
   {
     ArrayList<Piece> tiles = new ArrayList();
     
     int iX = (int)getBoardPos().x;
     int iY = (int)getBoardPos().y;
     
-    if(getTeam() == 0)
+    //scans in front of itself, taking into consideration the diagonals and the first-move double-jump
+    if(getTeam() == 0) //white pawns
     {
       for(int i = -1; i < 2; i++)
       {
@@ -24,7 +25,7 @@ class Pawn extends Piece
           tiles.add(board[iY - 2][iX]);
       }
     }
-    else
+    else //black pawns (unnecessary here)
     {
       for(int i = -1; i < 2; i++)
       {

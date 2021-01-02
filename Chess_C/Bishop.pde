@@ -5,7 +5,7 @@ class Bishop extends Piece
     super(boardPos, team, image);
   }
   
-  void getTiles()
+  void getTiles() //determines reachable tiles
   {
     ArrayList<Piece> tiles = new ArrayList();
     
@@ -15,6 +15,7 @@ class Bishop extends Piece
     boolean tr, tl, br, bl;
     tr = tl = br = bl = true;
     
+    //breadth-first "raycasting" outwards (diagonally)
     for(int i = 1; tr || tl || br || bl; i++)
     {
       if(tr && (iY - i < 0 || iX + i >= 8)) tr = false;

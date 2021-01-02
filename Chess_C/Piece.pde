@@ -1,32 +1,32 @@
 class Piece
 {
   private int team;
-  private PVector boardPos, pos;
+  private PVector boardPos, pos; //boardPos is index in grid, pos is position on screen
   private PImage image;
-  private ArrayList<Piece> moveTiles = new ArrayList();
+  private ArrayList<Piece> moveTiles = new ArrayList(); //reachable tiles
   private boolean selected = false;
   
-  public Piece(PVector boardPos)
+  public Piece(PVector boardPos) //blank tile
   {
     setBoardPos(boardPos);
     team = -1;
   }
-  public Piece(PVector boardPos, int team, PImage image)
+  public Piece(PVector boardPos, int team, PImage image) //actual piece
   {
     setBoardPos(boardPos);
     setTeam(team);
     setImage(image);
   }
   
-  void show()
+  void show() //draws piece
   {
     imageMode(CORNER);
     
-    if(selected && !firstClick)
+    if(selected && !firstClick) //highlighting
     {
       highlight();
       
-      for(Piece piece : moveTiles)
+      for(Piece piece : moveTiles) //highlights reachable tiles
         piece.highlight();
     }
     
@@ -40,17 +40,17 @@ class Piece
   
   void getTiles() {}
   
-  void highlight()
+  void highlight() //highlights piece/tile
   {
     rectMode(CORNER);
     
-    if(getTeam() == -1)
+    if(getTeam() == -1) //highlights blank tile
     {
       noStroke();
       fill(0, 50);
       circle(getPos().x + boardCellSize / 2, getPos().y + boardCellSize / 2, boardCellSize / 2.5);
     }
-    else
+    else //highlights actual piece
     {
       noStroke();
       fill(0, 50);

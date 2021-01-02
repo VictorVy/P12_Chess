@@ -1,4 +1,5 @@
-//server
+//server program
+
 import processing.net.*;
 import java.util.LinkedList;
 
@@ -11,6 +12,7 @@ PImage bRook, bBishop, bKnight, bQueen, bKing, bPawn;
 PImage screenCap;
 
 int iRow, iCol, fRow, fCol;
+//board is movable and resizable by changing these values
 int boardPosA = 5;
 int boardCellSize = 100;
 int boardPosB = boardPosA + boardCellSize * 8;
@@ -19,10 +21,10 @@ boolean firstClick = true;
 boolean yourTurn = true;
 boolean promoting = false;
 
-ArrayList<Piece> pieces = new ArrayList();
-LinkedList<Move> moveLog = new LinkedList();
+ArrayList<Piece> pieces = new ArrayList(); //list of all active pieces
+LinkedList<Move> moveLog = new LinkedList(); //record of all moves
 
-Piece[][] board = new Piece[8][8];
+Piece[][] board = new Piece[8][8]; //matrix of Pieces representing the board
 
 void setup()
 {
@@ -48,7 +50,7 @@ void draw()
   listen();
 }
 
-void loadImages()
+void loadImages() //assigns images
 {
   bRook = loadImage("blackRook.png");
   bBishop = loadImage("blackBishop.png");
@@ -65,7 +67,7 @@ void loadImages()
   wPawn = loadImage("whitePawn.png");
 }
 
-void setupBoard()
+void setupBoard() //initializes the Pieces on the board
 { 
   for(int r = 0; r < 8; r++)
   {
@@ -95,7 +97,7 @@ void setupBoard()
   }
 }
 
-void drawBoard()
+void drawBoard() //draws coloured grid
 {
   rectMode(CORNER);
   
@@ -115,18 +117,18 @@ void drawBoard()
   }
 }
 
-void drawPieces()
+void drawPieces() //draws active pieces
 {
   for(Piece piece : pieces)
     piece.show();
 }
 
-void undo()
+void undo() //undoes the last move, disregarding who's turn it is
 {
-  Piece taking = moveLog.getLast().getTaking();
-  Piece taken = moveLog.getLast().getTaken();
+  Piece taking = moveLog.getLast().getTaking(); //the pieced that moved
+  Piece taken = moveLog.getLast().getTaken(); //the piece or tile that was moved on
   
-  if(moveLog.getLast().getPromoMove())
+  if(moveLog.getLast().getPromoMove()) //handles undoing promotions
   {
     int team = board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x].getTeam();
     pieces.remove(board[(int)taken.getBoardPos().y][(int)taken.getBoardPos().x]);
@@ -142,9 +144,9 @@ void undo()
   moveLog.removeLast();
 }
 
-void promote()
+void promote() //draws the promotion menu
 {
-  //background
+  //dimming background
   rectMode(CORNER);
   imageMode(CORNER);
   image(screenCap, 0, 0);
@@ -152,7 +154,7 @@ void promote()
   fill(0, 128);
   rect(0, 0, width, height);
   
-  //ui
+  //drawiung ui
   fill(255);
   textSize(128);
   text("PROMOTE", width / 2, height / 4);
@@ -163,11 +165,11 @@ void promote()
   choiceBox(wQueen, "Q", width / 5 * 4, height / 1.75);
 }
 
-void endPromote(char type)
+void endPromote(char type) //promotes a pawn, and sends relevent data to client
 {
   pieces.remove(board[fRow][fCol]);
   
-  switch(type)
+  switch(type) //finishes logging promotion as a Move
   {
     case 'r':
       moveLog.getLast().setPromoPiece(new Rook(new PVector(fCol, fRow), 0, wRook));
@@ -193,7 +195,7 @@ void endPromote(char type)
   yourTurn = false;
 }
 
-void choiceBox(PImage image, String text, float x, float y)
+void choiceBox(PImage image, String text, float x, float y) //draws an option for the player to select
 {
   rectMode(CENTER);
   imageMode(CENTER);
@@ -211,7 +213,7 @@ void choiceBox(PImage image, String text, float x, float y)
   text(text, x, y + boardCellSize);
 }
 
-void listen()
+void listen() //listens for messages from the client
 {
   Client client = server.available();
   
@@ -219,9 +221,9 @@ void listen()
   {
     String incoming = client.readString();
     
-    if(incoming.contains("undo"))
+    if(incoming.contains("undo")) //recieves the 'undo' message
       undo();
-    else
+    else //recieves move
     {
       int iR = int(incoming.substring(0, 1));
       int iC = int(incoming.substring(2, 3));
@@ -230,11 +232,11 @@ void listen()
       
       if(pieces.contains(board[fR][fC])) pieces.remove(board[fR][fC]);
       
-      if(incoming.contains("promotion"))
+      if(incoming.contains("promotion")) //handles promotion moves
       {
         char type = incoming.charAt(8);
         
-        moveLog.addLast(new Move(board[iR][iC].getCopy(), board[fR][fC].getCopy(), true));
+        moveLog.addLast(new Move(board[iR][iC].getCopy(), board[fR][fC].getCopy(), true)); //begins logging promotion as a Move
         
         board[fR][fC] = type == 'r' ? new Rook(new PVector(fC, fR), 1, bRook):
                         type == 'k' ? new Knight(new PVector(fC, fR), 1, bKnight):
@@ -245,7 +247,7 @@ void listen()
         pieces.remove(board[iR][iC]);
         board[iR][iC] = new Piece(new PVector(iC, iR));
       }
-      else
+      else //handles typical moves
       {
         moveLog.addLast(new Move(board[iR][iC].getCopy(), board[fR][fC].getCopy()));
         movePiece(iR, iC, fR, fC);
@@ -256,7 +258,7 @@ void listen()
   }
 }
 
-void firstClick()
+void firstClick() //handles the player's selection-click
 {
   iRow = (mouseY - boardPosA) / 100;
   iCol = (mouseX - boardPosA) / 100;
@@ -268,29 +270,29 @@ void firstClick()
     firstClick = false;
   }
 }
-void secondClick()
+void secondClick() //handles other clicks
 {
   fRow = (mouseY - boardPosA) / 100;
   fCol = (mouseX - boardPosA) / 100;
   
-  if((fRow == iRow && fCol == iCol))
+  if(fRow == iRow && fCol == iCol) //deselects selected piece (clicked same piece)
   {
     board[iRow][iCol].setSelected(false);
     firstClick = true;
   }
-  else if(board[fRow][fCol].getTeam() == 0)
+  else if(board[fRow][fCol].getTeam() == 0) //changes selected piece (clicked another piece)
   {
     board[iRow][iCol].setSelected(false);
     firstClick = true;
     firstClick();
   }
-  else if(board[iRow][iCol].getMoveTiles().contains(board[fRow][fCol]))
+  else if(board[iRow][iCol].getMoveTiles().contains(board[fRow][fCol])) //moves selected piece (clicked reachable tile)
   {
-    if(!(fRow == 0 && board[iRow][iCol] instanceof Pawn))
+    if(!(fRow == 0 && board[iRow][iCol] instanceof Pawn)) //typical move
     {
       if(pieces.contains(board[fRow][fCol])) pieces.remove(board[fRow][fCol]);
       board[iRow][iCol].setSelected(false);
-      moveLog.addLast(new Move(board[iRow][iCol].getCopy(), board[fRow][fCol].getCopy()));
+      moveLog.addLast(new Move(board[iRow][iCol].getCopy(), board[fRow][fCol].getCopy())); //logs move
       movePiece(iRow, iCol, fRow, fCol);
       
       server.write(iRow + "," + iCol + "," + fRow + "," + fCol);
@@ -302,21 +304,21 @@ void secondClick()
     {
       if(pieces.contains(board[fRow][fCol])) pieces.remove(board[fRow][fCol]);
       board[iRow][iCol].setSelected(false);
-      moveLog.addLast(new Move(board[iRow][iCol].getCopy(), board[fRow][fCol].getCopy(), true));
+      moveLog.addLast(new Move(board[iRow][iCol].getCopy(), board[fRow][fCol].getCopy(), true)); //begins logging promotion as Move
       movePiece(iRow, iCol, fRow, fCol);
       
       promoting = true;
       screenCap = get();
     }
   }
-  else
+  else //deselects selected piece (clicked unreachable tile)
   {
     board[iRow][iCol].setSelected(false);
     firstClick = true;
   }
 }
 
-void movePiece(int iRow, int iCol, int fRow, int fCol)
+void movePiece(int iRow, int iCol, int fRow, int fCol) //updates the position of a piece on the board
 {
   board[fRow][fCol] = board[iRow][iCol];
   board[iRow][iCol] = new Piece(new PVector(iCol, iRow));
